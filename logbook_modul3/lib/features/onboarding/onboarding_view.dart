@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../logbook/log_view.dart';
+import '../auth/login_view.dart';
 
 class OnboardingView extends StatefulWidget {
   const OnboardingView({super.key});
@@ -18,7 +19,7 @@ class _OnboardingViewState extends State<OnboardingView> {
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LogView(username: "default_user")),
+          MaterialPageRoute(builder: (context) => const LoginView()),
         );
       }
     });
