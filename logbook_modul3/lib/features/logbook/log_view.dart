@@ -93,39 +93,71 @@ class _LogViewState extends State<LogView> {
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
       ),
-      body: ValueListenableBuilder<List<LogModel>>(
-        valueListenable: _controller.logsNotifier,
-        builder: (context, currentLogs, child) {
-          if (currentLogs.isEmpty) return const Center(child: Text("Belum ada catatan."));
-          return ListView.builder(
-            itemCount: currentLogs.length,
-            itemBuilder: (context, index) {
-              final log = currentLogs[index];
-              return Card(
-                child: ListTile(
-                  leading: const Icon(Icons.note),
-                  title: Text(log.title),
-                  subtitle: Text(log.description),
-                  trailing: Wrap(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _showEditLogDialog(index, log),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _controller.removeLog(index),
-                      ),
-                    ],
-                  ),
+      
+      body: Column( // Kita bungkus dengan Column agar bisa taruh Search Bar di atas
+        children: [
+          // KOTAK PENCARIAN
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              onChanged: (value) => _controller.searchLog(value), // Panggil fungsi search
+              decoration: InputDecoration(
+                labelText: "Cari Catatan...",
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              );
-            },
-          );
-        },
+                filled: true,
+                fillColor: Colors.white,
+              ),
+            ),
+          ),
+          
+          // DAFTAR CATATAN (Gunakan Expanded karena di dalam Column)
+          Expanded(
+            // PERHATIKAN: Sekarang kita listen ke filteredLogs, bukan logsNotifier
+            child: ValueListenableBuilder<List<LogModel>>(
+              valueListenable: _controller.filteredLogs, 
+              builder: (context, currentLogs, child) {
+                if (currentLogs.isEmpty) {
+                  return const Center(child: Text("Tidak ada catatan ditemukan."));
+                }
+                return ListView.builder(
+                  itemCount: currentLogs.length,
+                  itemBuilder: (context, index) {
+                    final log = currentLogs[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      elevation: 2,
+                      child: ListTile(
+                        leading: const Icon(Icons.note, color: Colors.indigo),
+                        title: Text(log.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(log.description),
+                        trailing: Wrap(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => _showEditLogDialog(index, log),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _controller.removeLog(index),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddLogDialog,
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
     );

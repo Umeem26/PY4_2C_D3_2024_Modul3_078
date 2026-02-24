@@ -5,9 +5,20 @@ import 'models/log_model.dart';
 
 class LogController {
   final ValueNotifier<List<LogModel>> logsNotifier = ValueNotifier([]);
+  final ValueNotifier<List<LogModel>> filteredLogs = ValueNotifier([]);
   static const String _storageKey = 'user_logs_data';
 
   LogController() { loadFromDisk(); }
+
+  void searchLog(String query) {
+    if (query.isEmpty) {
+      filteredLogs.value = logsNotifier.value;
+    } else {
+      filteredLogs.value = logsNotifier.value
+          .where((log) => log.title.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    }
+  }
 
   void addLog(String title, String desc) {
     final newLog = LogModel(title: title, description: desc, date: DateTime.now().toString());
@@ -29,6 +40,10 @@ class LogController {
     saveToDisk();
   }
 
+  void _syncFilteredLogs() {
+    filteredLogs.value = logsNotifier.value;
+  }
+
   Future<void> saveToDisk() async {
     final prefs = await SharedPreferences.getInstance();
     final String encodedData = jsonEncode(logsNotifier.value.map((e) => e.toMap()).toList());
@@ -41,6 +56,7 @@ class LogController {
     if (data != null) {
       final List decoded = jsonDecode(data);
       logsNotifier.value = decoded.map((e) => LogModel.fromMap(e)).toList();
+      _syncFilteredLogs();
     }
   }
 }
