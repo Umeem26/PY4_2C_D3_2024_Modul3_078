@@ -22,7 +22,10 @@ class LogController {
 
   void addLog(String title, String desc) {
     final newLog = LogModel(title: title, description: desc, date: DateTime.now().toString());
-    logsNotifier.value = [...logsNotifier.value, newLog];
+    final newList = List<LogModel>.from(logsNotifier.value)..add(newLog);
+    logsNotifier.value = newList;
+    
+    _syncFilteredLogs();
     saveToDisk();
   }
 
@@ -30,6 +33,8 @@ class LogController {
     final currentLogs = List<LogModel>.from(logsNotifier.value);
     currentLogs[index] = LogModel(title: title, description: desc, date: DateTime.now().toString());
     logsNotifier.value = currentLogs;
+
+    _syncFilteredLogs();
     saveToDisk();
   }
 
@@ -37,11 +42,12 @@ class LogController {
     final currentLogs = List<LogModel>.from(logsNotifier.value);
     currentLogs.removeAt(index);
     logsNotifier.value = currentLogs;
+    _syncFilteredLogs();
     saveToDisk();
   }
 
   void _syncFilteredLogs() {
-    filteredLogs.value = logsNotifier.value;
+    filteredLogs.value = List<LogModel>.from(logsNotifier.value);
   }
 
   Future<void> saveToDisk() async {

@@ -44,6 +44,9 @@ class _LogViewState extends State<LogView> {
                 _titleController.text,
                 _contentController.text,
               );
+
+              setState(() {});
+
               _titleController.clear();
               _contentController.clear();
               Navigator.pop(context);
@@ -75,6 +78,7 @@ class _LogViewState extends State<LogView> {
             onPressed: () {
               _controller.updateLog(index, _titleController.text, _contentController.text);
               _titleController.clear();
+              setState(() {});
               _contentController.clear();
               Navigator.pop(context);
             },
@@ -139,24 +143,54 @@ class _LogViewState extends State<LogView> {
                   itemCount: currentLogs.length,
                   itemBuilder: (context, index) {
                     final log = currentLogs[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      elevation: 2,
-                      child: ListTile(
-                        leading: const Icon(Icons.note, color: Colors.indigo),
-                        title: Text(log.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(log.description),
-                        trailing: Wrap(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () => _showEditLogDialog(index, log),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _controller.removeLog(index),
-                            ),
-                          ],
+                    
+                    // BUNGKUS CARD DENGAN DISMISSIBLE
+                    return Dismissible(
+                      // Gunakan identitas unik (timestamp dari date) agar list tidak error saat dihapus [cite: 205]
+                      key: Key(log.date), 
+                      // Swipe dari kanan ke kiri [cite: 205]
+                      direction: DismissDirection.endToStart, 
+                      
+                      // Tampilan latar belakang saat digeser (Warna Merah + Ikon) [cite: 205]
+                      background: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        child: const Icon(Icons.delete_sweep, color: Colors.white, size: 30),
+                      ),
+                      
+                      // Aksi yang terjadi saat kartu selesai digeser [cite: 205]
+                      onDismissed: (direction) {
+                        _controller.removeLog(index);
+                        
+                        // Munculkan notifikasi pop-up kecil di bawah [cite: 205]
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Catatan berhasil dihapus"),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      
+                      // KARTU CATATAN ASLI
+                      child: Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: ListTile(
+                          leading: const Icon(Icons.note, color: Colors.indigo),
+                          title: Text(log.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(log.description),
+                          // HANYA ADA TOMBOL EDIT (Tombol Hapus Dihilangkan)
+                          trailing: IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () => _showEditLogDialog(index, log),
+                          ),
                         ),
                       ),
                     );
