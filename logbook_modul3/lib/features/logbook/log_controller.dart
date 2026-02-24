@@ -12,7 +12,7 @@ class LogController {
 
   void searchLog(String query) {
     if (query.isEmpty) {
-      filteredLogs.value = logsNotifier.value;
+      filteredLogs.value = List.from(logsNotifier.value);
     } else {
       filteredLogs.value = logsNotifier.value
           .where((log) => log.title.toLowerCase().contains(query.toLowerCase()))
@@ -20,21 +20,31 @@ class LogController {
     }
   }
 
-  void addLog(String title, String desc) {
-    final newLog = LogModel(title: title, description: desc, date: DateTime.now().toString());
+  // 👇 PERHATIKAN: Sekarang sudah menerima 3 parameter (termasuk category)
+  void addLog(String title, String desc, String category) {
+    final newLog = LogModel(
+        title: title, 
+        description: desc, 
+        date: DateTime.now().toString(),
+        category: category, // Menyimpan kategori ke Model
+    );
     final newList = List<LogModel>.from(logsNotifier.value)..add(newLog);
     logsNotifier.value = newList;
-    
-    _syncFilteredLogs();
+    _syncFilteredLogs(); 
     saveToDisk();
   }
 
-  void updateLog(int index, String title, String desc) {
+  // 👇 PERHATIKAN: Ini juga sudah menerima parameter category
+  void updateLog(int index, String title, String desc, String category) {
     final currentLogs = List<LogModel>.from(logsNotifier.value);
-    currentLogs[index] = LogModel(title: title, description: desc, date: DateTime.now().toString());
+    currentLogs[index] = LogModel(
+        title: title, 
+        description: desc, 
+        date: DateTime.now().toString(),
+        category: category, // Menyimpan kategori ke Model
+    );
     logsNotifier.value = currentLogs;
-
-    _syncFilteredLogs();
+    _syncFilteredLogs(); 
     saveToDisk();
   }
 
@@ -42,7 +52,7 @@ class LogController {
     final currentLogs = List<LogModel>.from(logsNotifier.value);
     currentLogs.removeAt(index);
     logsNotifier.value = currentLogs;
-    _syncFilteredLogs();
+    _syncFilteredLogs(); 
     saveToDisk();
   }
 
@@ -62,7 +72,7 @@ class LogController {
     if (data != null) {
       final List decoded = jsonDecode(data);
       logsNotifier.value = decoded.map((e) => LogModel.fromMap(e)).toList();
-      _syncFilteredLogs();
+      _syncFilteredLogs(); 
     }
   }
 }

@@ -14,46 +14,67 @@ class _LogViewState extends State<LogView> {
   final LogController _controller = LogController();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+  
+  // VARIABEL KATEGORI
+  final List<String> _categories = ['Pribadi', 'Pekerjaan', 'Urgent', 'Lainnya'];
+  String _selectedCategory = 'Pribadi';
+
+  // FUNGSI PINTAR UNTUK MENGATUR WARNA KARTU
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Urgent': return Colors.red.shade50;
+      case 'Pekerjaan': return Colors.blue.shade50;
+      case 'Pribadi': return Colors.green.shade50;
+      default: return Colors.grey.shade50;
+    }
+  }
 
   void _showAddLogDialog() {
+    _selectedCategory = 'Pribadi'; // Reset default
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Tambah Catatan Baru"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(hintText: "Judul Catatan"),
+      builder: (context) => StatefulBuilder( // StatefulBuilder agar dropdown bisa diklik di dalam pop-up
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text("Tambah Catatan Baru"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(hintText: "Judul Catatan"),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _contentController,
+                  decoration: const InputDecoration(hintText: "Isi Deskripsi"),
+                ),
+                const SizedBox(height: 20),
+                // DROPDOWN KATEGORI
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: const InputDecoration(labelText: "Kategori"),
+                  items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                  onChanged: (val) {
+                    if (val != null) setStateDialog(() => _selectedCategory = val);
+                  },
+                ),
+              ],
             ),
-            TextField(
-              controller: _contentController,
-              decoration: const InputDecoration(hintText: "Isi Deskripsi"),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Batal"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              _controller.addLog(
-                _titleController.text,
-                _contentController.text,
-              );
-
-              setState(() {});
-
-              _titleController.clear();
-              _contentController.clear();
-              Navigator.pop(context);
-            },
-            child: const Text("Simpan"),
-          ),
-        ],
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+              ElevatedButton(
+                onPressed: () {
+                  _controller.addLog(_titleController.text, _contentController.text, _selectedCategory);
+                  _titleController.clear();
+                  _contentController.clear();
+                  Navigator.pop(context);
+                },
+                child: const Text("Simpan"),
+              ),
+            ],
+          );
+        }
       ),
     );
   }
@@ -61,30 +82,45 @@ class _LogViewState extends State<LogView> {
   void _showEditLogDialog(int index, LogModel log) {
     _titleController.text = log.title;
     _contentController.text = log.description;
+    _selectedCategory = log.category; // Set ke kategori sebelumnya
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Edit Catatan"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: _titleController),
-            TextField(controller: _contentController),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
-          ElevatedButton(
-            onPressed: () {
-              _controller.updateLog(index, _titleController.text, _contentController.text);
-              _titleController.clear();
-              setState(() {});
-              _contentController.clear();
-              Navigator.pop(context);
-            },
-            child: const Text("Update"),
-          ),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text("Edit Catatan"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: _titleController),
+                const SizedBox(height: 10),
+                TextField(controller: _contentController),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: const InputDecoration(labelText: "Kategori"),
+                  items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                  onChanged: (val) {
+                    if (val != null) setStateDialog(() => _selectedCategory = val);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+              ElevatedButton(
+                onPressed: () {
+                  _controller.updateLog(index, _titleController.text, _contentController.text, _selectedCategory);
+                  _titleController.clear();
+                  _contentController.clear();
+                  Navigator.pop(context);
+                },
+                child: const Text("Update"),
+              ),
+            ],
+          );
+        }
       ),
     );
   }
@@ -97,27 +133,21 @@ class _LogViewState extends State<LogView> {
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
       ),
-      
-      body: Column( // Kita bungkus dengan Column agar bisa taruh Search Bar di atas
+      body: Column(
         children: [
-          // KOTAK PENCARIAN
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
-              onChanged: (value) => _controller.searchLog(value), // Panggil fungsi search
+              onChanged: (value) => _controller.searchLog(value),
               decoration: InputDecoration(
                 labelText: "Cari Catatan...",
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
                 fillColor: Colors.white,
               ),
             ),
           ),
-          
-          // DAFTAR CATATAN (Gunakan Expanded karena di dalam Column)
           Expanded(
             child: ValueListenableBuilder<List<LogModel>>(
               valueListenable: _controller.filteredLogs,
@@ -143,50 +173,50 @@ class _LogViewState extends State<LogView> {
                   itemCount: currentLogs.length,
                   itemBuilder: (context, index) {
                     final log = currentLogs[index];
-                    
-                    // BUNGKUS CARD DENGAN DISMISSIBLE
                     return Dismissible(
-                      // Gunakan identitas unik (timestamp dari date) agar list tidak error saat dihapus [cite: 205]
-                      key: Key(log.date), 
-                      // Swipe dari kanan ke kiri [cite: 205]
-                      direction: DismissDirection.endToStart, 
-                      
-                      // Tampilan latar belakang saat digeser (Warna Merah + Ikon) [cite: 205]
+                      key: Key(log.date),
+                      direction: DismissDirection.endToStart,
                       background: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsets.only(right: 20),
                         child: const Icon(Icons.delete_sweep, color: Colors.white, size: 30),
                       ),
-                      
-                      // Aksi yang terjadi saat kartu selesai digeser [cite: 205]
                       onDismissed: (direction) {
                         _controller.removeLog(index);
-                        
-                        // Munculkan notifikasi pop-up kecil di bawah [cite: 205]
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Catatan berhasil dihapus"),
-                            backgroundColor: Colors.red,
-                            behavior: SnackBarBehavior.floating,
-                          ),
+                          const SnackBar(content: Text("Catatan dihapus"), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
                         );
                       },
-                      
-                      // KARTU CATATAN ASLI
                       child: Card(
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         elevation: 2,
+                        // WARNA KARTU BERUBAH SESUAI KATEGORI
+                        color: _getCategoryColor(log.category), 
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         child: ListTile(
                           leading: const Icon(Icons.note, color: Colors.indigo),
                           title: Text(log.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(log.description),
-                          // HANYA ADA TOMBOL EDIT (Tombol Hapus Dihilangkan)
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(log.description),
+                              const SizedBox(height: 4),
+                              // Bikin semacam "Badge" kecil untuk nampilin label kategorinya
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white54,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  log.category,
+                                  style: TextStyle(fontSize: 10, color: Colors.indigo.shade800, fontWeight: FontWeight.bold),
+                                ),
+                              )
+                            ],
+                          ),
                           trailing: IconButton(
                             icon: const Icon(Icons.edit, color: Colors.blue),
                             onPressed: () => _showEditLogDialog(index, log),
