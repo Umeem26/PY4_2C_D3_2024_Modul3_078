@@ -115,13 +115,26 @@ class _LogViewState extends State<LogView> {
           
           // DAFTAR CATATAN (Gunakan Expanded karena di dalam Column)
           Expanded(
-            // PERHATIKAN: Sekarang kita listen ke filteredLogs, bukan logsNotifier
             child: ValueListenableBuilder<List<LogModel>>(
-              valueListenable: _controller.filteredLogs, 
+              valueListenable: _controller.filteredLogs,
               builder: (context, currentLogs, child) {
                 if (currentLogs.isEmpty) {
-                  return const Center(child: Text("Tidak ada catatan ditemukan."));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.event_note, size: 100, color: Colors.indigo.shade200),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "Belum ada catatan nih.\nAyo buat logbook pertamamu!",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
+                        ),
+                      ],
+                    ),
+                  );
                 }
+
                 return ListView.builder(
                   itemCount: currentLogs.length,
                   itemBuilder: (context, index) {
